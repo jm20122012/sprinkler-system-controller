@@ -1,0 +1,46 @@
+{
+    "zoneList": [
+        "zone1",
+        "zone2",
+        "zone3",
+        "zone4"
+    ],
+    "events": [
+        {
+            "eventLabel": "event1",
+            "eventMembers": [
+                "zone1",
+                "zone2"
+            ],
+            "eventStart": "2019-01-01T00:00:00.000Z",
+            "duration": "15m"
+        },
+        {
+            "eventLabel": "event2",
+            "eventMembers": [
+                "zone3",
+                "zone4"
+            ],
+            "eventStart": "2019-01-01T00:00:00.000Z",
+            "duration": "15m"
+        },
+        {
+            "eventLabel": "event3",
+            "eventMembers": [
+                "zone1",
+                "zone3"
+            ],
+            "eventStart": "2019-01-01T00:00:00.000Z",
+            "duration": "15m"
+        },
+        {
+            "eventLabel": "event4",
+            "eventMembers": [
+                "zone2",
+                "zone4"
+            ],
+            "eventStart": "2019-01-01T00:00:00.000Z",
+            "duration": "15m"
+        }
+    ]
+}

@@ -1,17 +1,17 @@
 import React from 'react'
-import ZoneStatusContainer from '../stylesheets/ZoneStatusContainer';
+import ZoneStatusContainer from '../components/ZoneStatusContainer.jsx';
+import UpcomingEventsContainer from './UpcomingEventsContainer.jsx';
 
+// CSS Imports
 import "../stylesheets/MainContent.css";
 
 const MainContent = () => {
   return (
     <>
         <div className="main-content-container">
-            <p>Main Content</p>
+            {/* <p>Main Content</p> */}
             <ZoneStatusContainer />
-            <ZoneStatusContainer />
-            <ZoneStatusContainer />
-            <ZoneStatusContainer />
+            <UpcomingEventsContainer />
         </div>
     </>
   )
