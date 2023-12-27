@@ -31,7 +31,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: sprinkler-controller
+      POSTGRES_DB: sprinkler_controller
     volumes:
       - sprinkler-controller-db:/var/lib/postgresql/data
     restart: unless-stopped

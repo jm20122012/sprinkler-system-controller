@@ -1,5 +1,5 @@
 import React from 'react'
-import ZoneStatusContainer from '../components/ZoneStatusContainer.jsx';
+import ZoneStatusContainer from './ZoneStatusContainer.jsx';
 import UpcomingEventsContainer from './UpcomingEventsContainer.jsx';
 
 // CSS Imports
