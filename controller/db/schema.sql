@@ -9,6 +9,6 @@ CREATE TABLE IF NOT EXISTS event_schedule (
     start_time TIME NOT NULL,
     duration_minutes INT NOT NULL,
     day_of_week INT NOT NULL,
-    event_members VARCHAR(255) NOT NULL,
+    event_members TEXT[] NOT NULL,
     PRIMARY KEY (id)
 );
