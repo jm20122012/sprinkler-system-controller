@@ -46,7 +46,7 @@ const ZoneStatusItem = (props) => {
                     <ZoneStatusInfoRow label="Zone Status" value="On" />
                     <ZoneStatusInfoRow label="Next Event" value="13:00" />
                     <p>Manual Control</p>
-                    <Row className="align-items-center" style={{"width": "100%"}}> {/* Align items center */}
+                    <Row className="align-items-center" style={{"width": "100%"}}>
                         <Col>
                             <InputGroup>
                                 <Form.Check
