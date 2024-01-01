@@ -1,7 +1,7 @@
 import React, {useEffect} from 'react'
 import { useSelector, useDispatch } from 'react-redux';
 
-import ZoneStatus from './ZoneStatus.jsx';
+import ZoneStatusItem from './ZoneStatusItem.jsx';
 
 import { addZone, removeZone } from "../redux/slices/zoneStatusSlice.js";
 
@@ -35,7 +35,7 @@ const ZoneStatusContainer = () => {
                     zoneList && 
                     zoneList.map(zone => {
                         console.log("Rendering zone: ", zone);
-                        return <ZoneStatus key={zone} zone={zone} />
+                        return <ZoneStatusItem key={zone} zoneLabel={zone} />
                     })
                 }
             </div>
