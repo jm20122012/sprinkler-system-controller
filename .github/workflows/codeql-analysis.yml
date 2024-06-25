@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript' ]
+        language: [ 'javascript', 'go' ]
 
     steps:
     - name: Checkout repository
@@ -32,11 +32,20 @@ jobs:
       with:
         node-version: '16'
 
-    - name: Install dependencies
-      run: npm ci
+    - name: Install dependencies and build React app
+      working-directory: ./ui
+      run: |
+        npm ci
+        npm run build
 
-    - name: Build React app
-      run: npm run build
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.22.4'
+
+    - name: Build Go code
+      working-directory: ./controller
+      run: go build ./...
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
