@@ -19,7 +19,7 @@ const ZoneStatusItem = (props) => {
                     <ZoneStatusInfoRow label="Zone Status" value="On" />
                     <ZoneStatusInfoRow label="Next Event" value="13:00" />
                     <hr style={{"width": "80%"}}></hr>
-                    <ManualControlComponent zoneLabel={props.zoneLabel}/>
+                    <ManualControlComponent key={props.zoneID} zoneID={props.zoneID}/>
                 </div>
             </div>
         </>
@@ -51,7 +51,8 @@ const ManualControlComponent = (props) => {
     const checkZoneReady = async () => {
         const response = await fetch(`http://localhost:3000/zoneReady`);
         const data = await response.json();
-        return data[props.zoneLabel];
+        console.log("Zone ready data: ", data);
+        return data[props.zoneID];
     }
 
     const handleManualControlToggle = async (checked) => {
@@ -60,11 +61,11 @@ const ManualControlComponent = (props) => {
         if (checked) {
             console.log("Checking if zone is ready for manual control...")
             const zoneReady = await checkZoneReady();
-            console.log("Zone ready: ", zoneReady);
+            console.log(`${props.zoneID} ready state: `, zoneReady);
             if (zoneReady) {
                 setManualControlSwitch(true);
             } else {
-                console.log("Zone not ready for manual control");
+                console.log(`${props.zoneID} not ready for manual control`);
                 return;
             }
         } else {

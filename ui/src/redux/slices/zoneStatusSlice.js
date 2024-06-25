@@ -1,50 +1,45 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-    zoneList: [],
-    zoneStatus: [
-        {
+    zoneList: {
+        "zone1": {
             "zoneLabel": "Zone 1",
             "zoneStatus": "Off",
             "nextEvent": "None",
         },
-        {
+        "zone2": {
             "zoneLabel": "Zone 2",
             "zoneStatus": "Off",
             "nextEvent": "None",
         },
-        {
+        "zone3": {
             "zoneLabel": "Zone 3",
             "zoneStatus": "Off",
             "nextEvent": "None",
         },
-        {
+        "zone4": {
             "zoneLabel": "Zone 4",
             "zoneStatus": "Off",
             "nextEvent": "None",
         }
-    ]
+    },
 };
 
 const zoneStatusSlice = createSlice({
     name: "zoneStatus",
     initialState,
     reducers: {
-        addZone(state, action) {
-            state.zoneList.push(action.payload);
-        },
-        removeZone(state, action) {
-            state.zoneList.filter(zone => zone !== action.payload);
-        },
         updateZoneStatus(state, action) {
-            state.zoneStatus = action.payload;
+            state.zoneList[action.payload.zone].zoneStatus = action.payload.status;
         },
+        updateZoneNextEvent(state, action) {
+            state.zoneList[action.payload.zone].nextEvent = action.payload.nextEvent;
+        }
     },
 });
 
 export const { 
-    addZone,
-    removeZone,
-    updateZoneStatus 
+    updateZoneStatus ,
+    updateZoneNextEvent
 } = zoneStatusSlice.actions;
 export default zoneStatusSlice.reducer;
