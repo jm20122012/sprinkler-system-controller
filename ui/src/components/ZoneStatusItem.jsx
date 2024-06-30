@@ -15,7 +15,7 @@ const ZoneStatusItem = (props) => {
         <>
             <div className="zone-status-item-container">
                 <div className="zone-status-item-info-container">
-                    <ZoneStatusInfoRow label="Zone Label" value={props.zoneLabel} />
+                    <ZoneStatusInfoRow label="Zone Label" value={props.zoneID} />
                     <ZoneStatusInfoRow label="Zone Status" value="On" />
                     <ZoneStatusInfoRow label="Next Event" value="13:00" />
                     <hr style={{"width": "80%"}}></hr>
@@ -41,7 +41,6 @@ const ZoneStatusInfoRow = (props) => {
         </>
     )
 };
-
 const ManualControlComponent = (props) => {
     const [manualControlSwitch, setManualControlSwitch] = useState(false);
     const [manualControlDuration, setManualControlDuration] = useState(0);
@@ -78,19 +77,20 @@ const ManualControlComponent = (props) => {
         <>
             <p>Manual Control</p>
             <InputGroup 
-                className="align-items-center">
+                className="align-items-center w-100">
                 <Form.Check
                     type="switch"
                     id={`${props.zoneLabel}-manual-control-switch`}
                     label="Off/On"
                     checked={manualControlSwitch}
                     onChange={(e) => handleManualControlToggle(e.target.checked)}
-                    disabled={manualControlDuration === 0 ? true : false}
+                    disabled={manualControlDuration === 0}
                     style={{"marginRight": "10px"}}
                 />
                 <Form.Select
                     value={manualControlDuration}
-                    onChange={(e) => setManualControlDuration(Number(e.target.value))}>
+                    onChange={(e) => setManualControlDuration(Number(e.target.value))}
+                    className="w-100 mb-3">
                     <option value={0}>Select Duration</option>
                     {
                         Array.from(Array(DURATION_MAX - DURATION_MIN + 1).keys()).map((i) => {
@@ -100,6 +100,13 @@ const ManualControlComponent = (props) => {
                         })
                     }
                 </Form.Select>
+                {
+                    manualControlSwitch && 
+                    <InputGroup className="mb-3 d-flex w-100">
+                        <InputGroup.Text id="basic-addon1">Time Remaining: </InputGroup.Text>
+                        <InputGroup.Text className="flex-grow-1" id="manualControlTimeRemaining">5m</InputGroup.Text>
+                    </InputGroup>
+                }
             </InputGroup>
         </>
     )

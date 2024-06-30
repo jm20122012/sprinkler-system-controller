@@ -48,5 +48,71 @@
         "zone2": false,
         "zone3": true,
         "zone4": false
-    }
+    },
+    "schedule": [
+        {
+            "eventID": 1,
+            "zoneID": "zone1",
+            "startTime": "2024-06-05 08:30:00",
+            "stopTime": "2024-06-05 09:00:00",
+            "duration": "30m",
+            "active": true
+        },
+        {
+            "eventID": 2,
+            "zoneID": "zone2",
+            "startTime": "2024-06-05 08:30:00",
+            "stopTime": "2024-06-05 09:00:00",
+            "duration": "30m",
+            "active": true
+        },
+        {
+            "eventID": 3,
+            "zoneID": "zone3",
+            "startTime": "2024-06-05 08:30:00",
+            "stopTime": "2024-06-05 09:00:00",
+            "duration": "30m",
+            "active": true
+        },
+        {
+            "eventID": 4,
+            "zoneID": "zone4",
+            "startTime": "2024-06-05 08:30:00",
+            "stopTime": "2024-06-05 09:00:00",
+            "duration": "30m",
+            "active": true
+        },
+        {
+            "eventID": 5,
+            "zoneID": "zone1",
+            "startTime": "2024-06-05 16:30:00",
+            "stopTime": "2024-06-05 17:00:00",
+            "duration": "30m",
+            "active": false
+        },
+        {
+            "eventID": 6,
+            "zoneID": "zone2",
+            "startTime": "2024-06-05 16:30:00",
+            "stopTime": "2024-06-05 17:00:00",
+            "duration": "30m",
+            "active": false
+        },
+        {
+            "eventID": 7,
+            "zoneID": "zone3",
+            "startTime": "2024-06-05 16:30:00",
+            "stopTime": "2024-06-05 17:00:00",
+            "duration": "30m",
+            "active": false
+        },
+        {
+            "eventID": 8,
+            "zoneID": "zone4",
+            "startTime": "2024-06-05 16:30:00",
+            "stopTime": "2024-06-05 17:00:00",
+            "duration": "30m",
+            "active": false
+        }
+    ]
 }
