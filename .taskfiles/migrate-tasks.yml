@@ -1,0 +1,39 @@
+version: "3"
+tasks:
+  inspect:
+    desc: "Inspects the database schema and prints to stdout"
+    cmd: >
+      atlas schema inspect 
+      --url "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable&search_path=public"
+      --format {{`'{{ sql . "  " }}'`}}
+
+  inspect-write:
+    desc: "Inspects the database schema and writes to a file"
+    cmd: >
+      atlas schema inspect 
+      --url "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${DEV_POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable&search_path=public"
+      --format {{`'{{ sql . "  " }}'`}} | tee db/schema.sql
+
+  plan:
+    desc: "Applies current migrations to clean environment (--dev-url). Then compares it to the dev db (--to) and creates a migration plan"
+    cmd: >
+      atlas migrate diff
+      --dir "file://db/migrations"
+      --dev-url "docker://postgres/16/dev?search_path=public"
+      --to "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${DEV_POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable&search_path=public"
+      --format {{`'{{ sql . "  " }}'`}}
+
+  create-baseline:
+    desc: "Creates an initial baseline migration using a clean environment (--dev-url) compared to desired state (--to)"
+    cmd: >
+      atlas migrate diff baseline
+      --dev-url "docker://postgres/16/dev?search_path=public"
+      --to "file://db/schema.sql" 
+      --dir "file://db/migrations"
+
+  apply:
+    desc: "Applies the migration plan"
+    cmd: >
+      atlas migrate apply
+      --dir "file://db/migrations"
+      --url "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable&search_path=public"

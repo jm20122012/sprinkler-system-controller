@@ -6,35 +6,44 @@ services:
     container_name: sprinkler-controller-web-ui
     ports:
       - "3000:3000"
+    networks:
+      - sprinkler_controller_network
     build:
       context: ./
       dockerfile: Dockerfile
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      controller-service:
+        condition: started
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   controller-service:
-    image: golang:1.21.5-alpine3.19
-    container_name: sprinkler-controller-service
-    ports:
-      - "8080:8080"
+    image: controller-service:1.0.0
+    container_name: controller-service
     build:
-      context: ./
+      context: .
       dockerfile: Dockerfile
-    restart: unless-stopped
-
-  db:
-    image: postgres:16.1-alpine3.19
-    container_name: sprinkler-controller-db
-    ports:
-      - "5432:5432"
-    env_file:
-      - .env
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: sprinkler_controller
+    networks:
+      - sprinkler_controller_network
     volumes:
-      - sprinkler-controller-db:/var/lib/postgresql/data
+      - .env:/app/.env
+      - ./controller/config.json:/app/data/config.json
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      db:
+        condition: service_healthy
 
-volumes:
-  sprinkler-controller-db:
+networks:
+  sprinkler_controller_network:
+    driver: "bridge"

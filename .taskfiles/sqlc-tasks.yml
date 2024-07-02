@@ -1,0 +1,5 @@
+version: "3"
+tasks:
+  generate:
+    desc: "Runs SQLc generation"
+    cmd: sqlc -f db/sqlc.yaml generate

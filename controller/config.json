@@ -1,0 +1,80 @@
+{
+    "appConfig": {
+        "tz": "America/Denver",
+        "debugLevel": "DEBUG"
+    },
+    "zoneList": {
+        "zone1": {
+            "friendlyName": "Zone 1",
+            "location": "front-yard",
+            "schedule": [
+                {
+                    "startTime": "08:00:00",
+                    "durationMinutes": 10,
+                    "weekdays": 127,
+                    "completed": false
+                },
+                {
+                    "startTime": "16:00:00",
+                    "durationMinutes": 10,
+                    "weekdays": 127,
+                    "completed": false
+                }
+            ]
+        },
+        "zone2": {
+            "friendlyName": "Zone 2",
+            "location": "front-yard",
+            "schedule": [
+                {
+                    "startTime": "08:15:00",
+                    "durationMinutes": 10,
+                    "weekdays": 127,
+                    "completed": false
+                },
+                {
+                    "startTime": "16:15:00",
+                    "durationMinutes": 10,
+                    "weekdays": 127,
+                    "completed": false
+                }
+            ]
+        },
+        "zone3": {
+            "friendlyName": "Zone 3",
+            "location": "back-yard",
+            "schedule": [
+                {
+                    "startTime": "08:30:00",
+                    "durationMinutes": 10,
+                    "weekdays": 127,
+                    "completed": false
+                },
+                {
+                    "startTime": "16:30:00",
+                    "durationMinutes": 10,
+                    "weekdays": 127,
+                    "completed": false
+                }
+            ]
+        },
+        "zone4": {
+            "friendlyName": "Zone 4",
+            "location": "back-yard",
+            "schedule": [
+                {
+                    "startTime": "08:45:00",
+                    "durationMinutes": 10,
+                    "weekdays": 127,
+                    "completed": false
+                },
+                {
+                    "startTime": "16:45:00",
+                    "durationMinutes": 10,
+                    "weekdays": 127,
+                    "completed": false
+                }
+            ]
+        }
+    }
+}
