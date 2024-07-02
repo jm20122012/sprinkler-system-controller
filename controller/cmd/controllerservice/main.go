@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"sprinkler-controller-service/internal/api"
 	"sprinkler-controller-service/internal/config"
 	cs "sprinkler-controller-service/internal/controllerservice"
 	"sprinkler-controller-service/internal/utils"
@@ -61,6 +62,13 @@ func main() {
 		cancel()
 	}(cancel)
 
+	var apiHndlr api.IApiHandler
+	if cfg.AppConfig.DryRun {
+		apiHndlr = api.NewDryRunApiHandler(ctx, logger, cfg.AppConfig.ApiUrl)
+	} else {
+		apiHndlr = api.NewApiHandler(ctx, logger, cfg.AppConfig.ApiUrl)
+	}
+
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	controllerService := cs.NewControllerService(
@@ -68,6 +76,7 @@ func main() {
 		wg,
 		logger,
 		cfg,
+		apiHndlr,
 	)
 
 	go controllerService.Run()

@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"sync"
 )
 
 type Config struct {
@@ -12,7 +13,9 @@ type Config struct {
 
 type AppConfig struct {
 	TZ         string `json:"tz"`
+	ApiUrl     string `json:"apiUrl"`
 	DebugLevel string `json:"debugLevel"`
+	DryRun     bool   `json:"dryRun"`
 }
 
 type Zone struct {
@@ -26,6 +29,8 @@ type ScheduleItem struct {
 	DurationMinutes int    `json:"durationMinutes"`
 	Weekdays        uint8  `json:"weekdays"`
 	Completed       bool   `json:"completed"`
+	Active          bool   `json:"active"`
+	Mutex           sync.Mutex
 }
 
 func LoadConfig(file string) (*Config, error) {
@@ -43,5 +48,10 @@ func LoadConfig(file string) (*Config, error) {
 		return nil, err
 	}
 
+	for _, item := range cfg.ZoneList {
+		for idx := range item.Schedule {
+			item.Schedule[idx].Mutex = sync.Mutex{}
+		}
+	}
 	return &cfg, nil
 }

@@ -1,7 +1,9 @@
 {
     "appConfig": {
         "tz": "America/Denver",
-        "debugLevel": "DEBUG"
+        "apiUrl": "http://localhost:8000",
+        "debugLevel": "DEBUG",
+        "dryRun": true
     },
     "zoneList": {
         "zone1": {
@@ -12,13 +14,15 @@
                     "startTime": "08:00:00",
                     "durationMinutes": 10,
                     "weekdays": 127,
-                    "completed": false
+                    "completed": false,
+                    "active": false
                 },
                 {
                     "startTime": "16:00:00",
                     "durationMinutes": 10,
                     "weekdays": 127,
-                    "completed": false
+                    "completed": false,
+                    "active": false
                 }
             ]
         },
@@ -30,13 +34,15 @@
                     "startTime": "08:15:00",
                     "durationMinutes": 10,
                     "weekdays": 127,
-                    "completed": false
+                    "completed": false,
+                    "active": false
                 },
                 {
                     "startTime": "16:15:00",
                     "durationMinutes": 10,
                     "weekdays": 127,
-                    "completed": false
+                    "completed": false,
+                    "active": false
                 }
             ]
         },
@@ -48,13 +54,15 @@
                     "startTime": "08:30:00",
                     "durationMinutes": 10,
                     "weekdays": 127,
-                    "completed": false
+                    "completed": false,
+                    "active": false
                 },
                 {
                     "startTime": "16:30:00",
                     "durationMinutes": 10,
                     "weekdays": 127,
-                    "completed": false
+                    "completed": false,
+                    "active": false
                 }
             ]
         },
@@ -66,13 +74,15 @@
                     "startTime": "08:45:00",
                     "durationMinutes": 10,
                     "weekdays": 127,
-                    "completed": false
+                    "completed": false,
+                    "active": false
                 },
                 {
                     "startTime": "16:45:00",
                     "durationMinutes": 10,
                     "weekdays": 127,
-                    "completed": false
+                    "completed": false,
+                    "active": false
                 }
             ]
         }
