@@ -42,16 +42,14 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.22.4'
-
-    - name: Tidy Go modules
-      run: |
-          cd controller
-          go mod tidy
   
+    - name: Tidy Go modules
+      working-directory: ./controller
+      run: go mod tidy
+    
     - name: Build Go code
-      run: |
-        cd controller
-        go build -o main ./cmd/controllerservice
+      working-directory: ./controller
+      run: go build -o main ./cmd/controllerservice
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
