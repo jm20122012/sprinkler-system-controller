@@ -62,14 +62,20 @@ func main() {
 		cancel()
 	}(cancel)
 
-	var apiHndlr api.IApiHandler
+	wg := &sync.WaitGroup{}
+
+	// Instantiate the API and start it
+	wg.Add(1)
+	api := api.NewApi(ctx, logger, wg)
+	go api.Run()
+
+	var apiHndlr cs.IApiHandler
 	if cfg.AppConfig.DryRun {
-		apiHndlr = api.NewDryRunApiHandler(ctx, logger, cfg.AppConfig.ApiUrl)
+		apiHndlr = cs.NewDryRunApiHandler(ctx, logger, cfg.AppConfig.ApiUrl)
 	} else {
-		apiHndlr = api.NewApiHandler(ctx, logger, cfg.AppConfig.ApiUrl)
+		apiHndlr = cs.NewApiHandler(ctx, logger, cfg.AppConfig.ApiUrl)
 	}
 
-	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	controllerService := cs.NewControllerService(
 		ctx,

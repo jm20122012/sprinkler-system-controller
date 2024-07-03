@@ -3,7 +3,6 @@ package controllerservice
 import (
 	"context"
 	"log/slog"
-	"sprinkler-controller-service/internal/api"
 	"sprinkler-controller-service/internal/config"
 	"sync"
 	"time"
@@ -19,9 +18,9 @@ type ControllerService struct {
 	Wg            *sync.WaitGroup
 	Logger        *slog.Logger
 	Config        *config.Config
-	ApiHandler    api.IApiHandler
+	ApiHandler    IApiHandler
 	LastResetDate time.Time
-	Mutex         sync.Mutex
+	Mutex         sync.RWMutex
 	TaskQueue     chan *config.ScheduleItem
 }
 
@@ -29,7 +28,7 @@ func NewControllerService(ctx context.Context,
 	wg *sync.WaitGroup,
 	logger *slog.Logger,
 	cfg *config.Config,
-	apiHdnlr api.IApiHandler,
+	apiHdnlr IApiHandler,
 ) *ControllerService {
 	return &ControllerService{
 		Ctx:           ctx,
@@ -38,7 +37,7 @@ func NewControllerService(ctx context.Context,
 		Config:        cfg,
 		ApiHandler:    apiHdnlr,
 		LastResetDate: time.Now(),
-		Mutex:         sync.Mutex{},
+		Mutex:         sync.RWMutex{},
 		TaskQueue:     make(chan *config.ScheduleItem, 100),
 	}
 }
@@ -80,30 +79,31 @@ func (c *ControllerService) Run() {
 			for zoneName, zoneInfo := range c.Config.ZoneList {
 				c.Logger.Debug("Checking zone schedule", "zone", zoneName)
 				for idx := range zoneInfo.Schedule {
-					scheduleItem := zoneInfo.Schedule[idx]
 					currentTime := time.Now()
 
-					c.Logger.Debug("Comparing current and start times", "zone", zoneName, "current", currentTime, "startTime", scheduleItem.StartTime)
+					c.Logger.Debug("Comparing current and start times", "zone", zoneName, "current", currentTime, "startTime", zoneInfo.Schedule[idx].StartTime)
 
-					startTime, err := time.Parse(time.TimeOnly, scheduleItem.StartTime)
+					startTime, err := time.Parse(time.TimeOnly, zoneInfo.Schedule[idx].StartTime)
 					if err != nil {
-						c.Logger.Error("Error parsing start time", "startTime", scheduleItem.StartTime, "error", err)
+						c.Logger.Error("Error parsing start time", "startTime", zoneInfo.Schedule[idx].StartTime, "error", err)
 					}
 
-					duration := time.Duration(scheduleItem.DurationMinutes)
+					duration := time.Duration(zoneInfo.Schedule[idx].DurationMinutes)
 					endTime := startTime.Add(duration * time.Minute)
 
-					if currentTime.After(startTime) && !scheduleItem.Active {
+					c.Mutex.RLock()
+					if currentTime.After(startTime) && !zoneInfo.Schedule[idx].Active {
 						c.Logger.Debug("Zone is not active and current time exceeds start time for zone schedule item", "zone", zoneName, "currentTime", time.Now(), "startTime", startTime)
-						c.Logger.Info("Starting sprinkler event", "zoneName", zoneName, "currentTime", currentTime, "startTime", scheduleItem.StartTime, "endTime", endTime, "durationMinutes", scheduleItem.DurationMinutes)
-						c.TaskQueue <- &scheduleItem
+						c.Logger.Info("Starting sprinkler event", "zoneName", zoneName, "currentTime", currentTime, "startTime", zoneInfo.Schedule[idx].StartTime, "endTime", endTime, "durationMinutes", zoneInfo.Schedule[idx].DurationMinutes)
+						c.TaskQueue <- &zoneInfo.Schedule[idx]
 					}
 
-					if currentTime.After(endTime) && scheduleItem.Active {
+					if currentTime.After(endTime) && zoneInfo.Schedule[idx].Active {
 						c.Logger.Debug("Zone is active and current time exceeds end time for zone schedule item", "zone", zoneName, "currentTime", time.Now(), "startTime", startTime)
-						c.Logger.Info("Stopping sprinkler event", "zoneName", zoneName, "currentTime", currentTime, "startTime", scheduleItem.StartTime, "endTime", endTime, "durationMinutes", scheduleItem.DurationMinutes)
-						c.TaskQueue <- &scheduleItem
+						c.Logger.Info("Stopping sprinkler event", "zoneName", zoneName, "currentTime", currentTime, "startTime", zoneInfo.Schedule[idx].StartTime, "endTime", endTime, "durationMinutes", zoneInfo.Schedule[idx].DurationMinutes)
+						c.TaskQueue <- &zoneInfo.Schedule[idx]
 					}
+					c.Mutex.RUnlock()
 				}
 			}
 		}
@@ -126,9 +126,11 @@ func (c *ControllerService) TaskProcessor(wg *sync.WaitGroup, ctx context.Contex
 				c.Logger.Error("API request error", "event", t)
 				continue
 			}
+			c.Mutex.Lock()
 			t.Mutex.Lock()
 			t.Active = true
 			t.Mutex.Unlock()
+			c.Mutex.Unlock()
 		}
 	}
 }
