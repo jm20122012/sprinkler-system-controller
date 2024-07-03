@@ -44,7 +44,7 @@ jobs:
         go-version: '1.22.4'
 
     - name: Build Go code
-      run: go build ./controller/...
+      run: go build -o main ./controller/cmd/controllerservice
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
