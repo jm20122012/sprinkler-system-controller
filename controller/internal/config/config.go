@@ -24,6 +24,9 @@ type Zone struct {
 	Schedule     []ScheduleItem `json:"schedule"`
 }
 
+// Weekdays is a uint8 where each bit represents a day of the week
+// starting with Sunday at the LSB.  The MSB is not used.  For example,
+// 0 0 1 0 1 0 1 0 means that Monday, Wednesday, and Friday are enabled
 type ScheduleItem struct {
 	StartTime       string        `json:"startTime"`
 	DurationMinutes int           `json:"durationMinutes"`
