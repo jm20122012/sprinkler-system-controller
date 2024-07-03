@@ -44,11 +44,13 @@ func (a *Api) Run() {
 		Handler: a.Mux,
 	}
 
-	a.Logger.Info("Starting API...")
-	err := server.ListenAndServe()
-	if err != nil {
-		a.Logger.Error("Error starting API", "error", err)
-	}
+	go func() {
+		a.Logger.Info("Starting API...")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			a.Logger.Error("Error starting API", "error", err)
+			panic(err)
+		}
+	}()
 
 	<-a.Ctx.Done()
 
@@ -56,8 +58,7 @@ func (a *Api) Run() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err = server.Shutdown(shutdownCtx)
-	if err != nil {
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		a.Logger.Error("Error shutting down http server", "error", err)
 	}
 
@@ -76,7 +77,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 func getSystemStatus(w http.ResponseWriter, r *http.Request) {
 
 	resp := StatusResponse{
-		MicrocontrollerStatus: "OKAY",
+		MicrocontrollerStatus: "OK",
 	}
 
 	for i := 0; i < 5; i++ {

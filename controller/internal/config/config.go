@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	AppConfig AppConfig       `json:"appConfig"`
-	ZoneList  map[string]Zone `json:"zoneList"`
+	AppConfig AppConfig        `json:"appConfig"`
+	ZoneList  map[string]*Zone `json:"zoneList"`
 }
 
 type AppConfig struct {
@@ -25,12 +25,11 @@ type Zone struct {
 }
 
 type ScheduleItem struct {
-	StartTime       string `json:"startTime"`
-	DurationMinutes int    `json:"durationMinutes"`
-	Weekdays        uint8  `json:"weekdays"`
-	Completed       bool   `json:"completed"`
-	Active          bool   `json:"active"`
-	Mutex           sync.Mutex
+	StartTime       string        `json:"startTime"`
+	DurationMinutes int           `json:"durationMinutes"`
+	Weekdays        uint8         `json:"weekdays"`
+	Active          bool          `json:"active"`
+	Mutex           *sync.RWMutex `json:"-"`
 }
 
 func LoadConfig(file string) (*Config, error) {
@@ -50,7 +49,7 @@ func LoadConfig(file string) (*Config, error) {
 
 	for _, item := range cfg.ZoneList {
 		for idx := range item.Schedule {
-			item.Schedule[idx].Mutex = sync.Mutex{}
+			item.Schedule[idx].Mutex = &sync.RWMutex{}
 		}
 	}
 	return &cfg, nil
