@@ -16,23 +16,25 @@ type AppConfig struct {
 	ApiUrl     string `json:"apiUrl"`
 	DebugLevel string `json:"debugLevel"`
 	DryRun     bool   `json:"dryRun"`
+	MqttBroker string `json:"mqttBroker"`
+	MqttPort   int    `json:"mqttPort"`
 }
 
 type Zone struct {
 	FriendlyName string         `json:"friendlyName"`
 	Location     string         `json:"location"`
 	Schedule     []ScheduleItem `json:"schedule"`
+	Active       bool           `json:"active"`
+	Mutex        *sync.RWMutex  `json:"-"`
 }
 
 // Weekdays is a uint8 where each bit represents a day of the week
 // starting with Sunday at the LSB.  The MSB is not used.  For example,
 // 0 0 1 0 1 0 1 0 means that Monday, Wednesday, and Friday are enabled
 type ScheduleItem struct {
-	StartTime       string        `json:"startTime"`
-	DurationMinutes int           `json:"durationMinutes"`
-	Weekdays        uint8         `json:"weekdays"`
-	Active          bool          `json:"active"`
-	Mutex           *sync.RWMutex `json:"-"`
+	StartTime       string `json:"startTime"`
+	DurationMinutes int    `json:"durationMinutes"`
+	Weekdays        uint8  `json:"weekdays"`
 }
 
 func LoadConfig(file string) (*Config, error) {
@@ -50,10 +52,8 @@ func LoadConfig(file string) (*Config, error) {
 		return nil, err
 	}
 
-	for _, item := range cfg.ZoneList {
-		for idx := range item.Schedule {
-			item.Schedule[idx].Mutex = &sync.RWMutex{}
-		}
+	for _, zone := range cfg.ZoneList {
+		zone.Mutex = &sync.RWMutex{}
 	}
 	return &cfg, nil
 }

@@ -190,7 +190,7 @@ void mqttReconnect() {
     if (client.connect(clientId.c_str())) {
       log("MQTT Connected");
 
-      if (client.subscribe(MQTT_CMD_TOPIC)){
+      if (client.subscribe(MQTT_CMD_TOPIC, 1)){
         log("Subscribed to topic: " + String(MQTT_CMD_TOPIC));
       } else {
         log("Failed to subscribe to topic: " + String(MQTT_CMD_TOPIC));

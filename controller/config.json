@@ -3,84 +3,81 @@
         "tz": "America/Denver",
         "apiUrl": "http://localhost:8000",
         "debugLevel": "DEBUG",
-        "dryRun": true
+        "dryRun": true,
+        "mqttBroker": "192.168.3.31",
+        "mqttPort": 1883
     },
     "zoneList": {
         "zone1": {
             "friendlyName": "Zone 1",
             "location": "front-yard",
+            "active": false,
             "schedule": [
                 {
-                    "startTime": "08:00:00",
-                    "durationMinutes": 10,
-                    "weekdays": 127,
-                    "active": false
+                    "startTime": "11:55:00",
+                    "durationMinutes": 5,
+                    "weekdays": 127
                 },
                 {
                     "startTime": "16:00:00",
-                    "durationMinutes": 10,
-                    "weekdays": 127,
-                    "active": false
+                    "durationMinutes": 5,
+                    "weekdays": 127
                 },
                 {
                     "startTime": "13:43:00",
-                    "durationMinutes": 10,
-                    "weekdays": 127,
-                    "active": false
+                    "durationMinutes": 5,
+                    "weekdays": 127
                 }
             ]
         },
         "zone2": {
             "friendlyName": "Zone 2",
             "location": "front-yard",
+            "active": false,
             "schedule": [
                 {
-                    "startTime": "08:15:00",
-                    "durationMinutes": 10,
-                    "weekdays": 127,
-                    "active": false
+                    "startTime": "12:05:00",
+                    "durationMinutes": 5,
+                    "weekdays": 127
                 },
                 {
                     "startTime": "16:15:00",
                     "durationMinutes": 10,
-                    "weekdays": 127,
-                    "active": false
+                    "weekdays": 127
                 }
             ]
         },
         "zone3": {
             "friendlyName": "Zone 3",
             "location": "back-yard",
+            "active": false,
             "schedule": [
                 {
-                    "startTime": "08:30:00",
-                    "durationMinutes": 10,
-                    "weekdays": 127,
-                    "active": false
+                    "startTime": "12:15:00",
+                    "durationMinutes": 5,
+                    "weekdays": 127
                 },
                 {
                     "startTime": "16:30:00",
                     "durationMinutes": 10,
-                    "weekdays": 127,
-                    "active": false
+                    "weekdays": 127
                 }
             ]
         },
         "zone4": {
             "friendlyName": "Zone 4",
             "location": "back-yard",
+            "active": false,
             "schedule": [
                 {
-                    "startTime": "08:45:00",
-                    "durationMinutes": 10,
-                    "weekdays": 127,
-                    "active": false
+                    "startTime": "12:25:00",
+                    "durationMinutes": 5,
+                    "weekdays": 127
                 },
                 {
                     "startTime": "16:45:00",
                     "durationMinutes": 10,
-                    "weekdays": 127,
-                    "active": false
+                    "weekdays": 127
                 }
             ]
         }

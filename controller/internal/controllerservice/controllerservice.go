@@ -2,15 +2,43 @@ package controllerservice
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"sprinkler-controller-service/internal/config"
 	"sync"
 	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-type Task struct {
-	ZoneName string
-	Action   bool
+type CommandMessage struct {
+	CommandType string `json:"command_type"`
+	Zone        string `json:"zone"`
+	State       int    `json:"state"`
+}
+
+// {
+// 	"messageType":"status",
+// 	"zone1Active":false,
+// 	"zone1LastOnTime":"2024-07-05 16:40:01 UTC",
+// 	"zone2Active":false,
+// 	"zone2LastOnTime":"2024-07-05 17:00:01 UTC",
+// 	"zone3Active":true,
+// 	"zone3LastOnTime":"2024-07-05 17:20:03 UTC",
+// 	"zone4Active":false,
+// 	"zone4LastOnTime":"never"
+// }
+
+type PicowStatusResponse struct {
+	MessageType     string `json:"messageType"`
+	Zone1Active     bool   `json:"zone1Active"`
+	Zone1LastOnTime string `json:"zone1LastOnTime"`
+	Zone2Active     bool   `json:"zone2Active"`
+	Zone2LastOnTime string `json:"zone2LastOnTime"`
+	Zone3Active     bool   `json:"zone3Active"`
+	Zone3LastOnTime string `json:"zone3LastOnTime"`
+	Zone4Active     bool   `json:"zone4Active"`
+	Zone4LastOnTime string `json:"zone4LastOnTime"`
 }
 
 type ControllerService struct {
@@ -20,7 +48,8 @@ type ControllerService struct {
 	Config        *config.Config
 	ApiHandler    IApiHandler
 	LastResetDate time.Time
-	TaskQueue     chan *config.ScheduleItem
+	TaskQueue     chan CommandMessage
+	MqttClient    *MqttClient
 }
 
 func NewControllerService(ctx context.Context,
@@ -29,15 +58,29 @@ func NewControllerService(ctx context.Context,
 	cfg *config.Config,
 	apiHdnlr IApiHandler,
 ) *ControllerService {
-	return &ControllerService{
+	cs := &ControllerService{
 		Ctx:           ctx,
 		Wg:            wg,
 		Logger:        logger,
 		Config:        cfg,
 		ApiHandler:    apiHdnlr,
 		LastResetDate: time.Now(),
-		TaskQueue:     make(chan *config.ScheduleItem, 100),
+		TaskQueue:     make(chan CommandMessage, 100),
 	}
+
+	client := NewMqttClient(
+		cfg.AppConfig.MqttBroker,
+		cfg.AppConfig.MqttPort,
+		cs.OnMsgHndlrFactory(),
+		cs.OnConnectHndlrFactory(),
+		cs.OnConnectLostHndlrFactory(),
+	)
+
+	cs.MqttClient = client
+
+	cs.MqttSubscribe("sprinkler_system_controller/picow/status")
+
+	return cs
 }
 
 func isDayEnabled(weekdays uint8, day time.Weekday) bool {
@@ -67,12 +110,14 @@ func (c *ControllerService) Run() {
 			c.Logger.Info("Done context signal detected in controller service - cleaning up")
 			taskProcCancel()
 			taskProcWg.Wait()
+			c.MqttCleanup()
 			c.Wg.Done()
 			return
 		default:
-
 			for zoneName, zoneInfo := range c.Config.ZoneList {
 				c.Logger.Debug("Checking zone schedule", "zone", zoneName)
+				zoneInfo.Mutex.RLock()
+
 				for idx := range zoneInfo.Schedule {
 					scheduleItem := &zoneInfo.Schedule[idx]
 
@@ -103,35 +148,48 @@ func (c *ControllerService) Run() {
 					duration := time.Duration(scheduleItem.DurationMinutes) * time.Minute
 					endTime := startTime.Add(duration)
 
-					scheduleItem.Mutex.RLock()
 					c.Logger.Debug("Time comparison",
 						"zone", zoneName,
 						"scheduleItemIndex", idx,
 						"current", currentTime.Format(time.RFC3339),
 						"start", startTime.Format(time.RFC3339),
 						"end", endTime.Format(time.RFC3339),
-						"zoneActive", scheduleItem.Active,
+						"zoneActive", zoneInfo.Active,
 					)
 
-					if currentTime.After(startTime) && currentTime.Before(endTime) && !scheduleItem.Active {
+					if currentTime.After(startTime) && currentTime.Before(endTime) && !zoneInfo.Active {
 						c.Logger.Info("Starting sprinkler event",
 							"zoneName", zoneName,
 							"currentTime", currentTime.Format(time.RFC3339),
 							"startTime", startTime.Format(time.RFC3339),
 							"endTime", endTime.Format(time.RFC3339),
-							"durationMinutes", scheduleItem.DurationMinutes)
-						c.TaskQueue <- scheduleItem
-					} else if currentTime.After(endTime) && scheduleItem.Active {
+							"durationMinutes", scheduleItem.DurationMinutes,
+						)
+
+						newCmdMessage := CommandMessage{
+							CommandType: "update_zone_state",
+							Zone:        zoneName,
+							State:       1,
+						}
+						c.TaskQueue <- newCmdMessage
+					} else if currentTime.After(endTime) && zoneInfo.Active {
 						c.Logger.Info("Stopping sprinkler event",
 							"zoneName", zoneName,
 							"currentTime", currentTime.Format(time.RFC3339),
 							"startTime", startTime.Format(time.RFC3339),
 							"endTime", endTime.Format(time.RFC3339),
-							"durationMinutes", scheduleItem.DurationMinutes)
-						c.TaskQueue <- scheduleItem
+							"durationMinutes", scheduleItem.DurationMinutes,
+						)
+
+						newCmdMessage := CommandMessage{
+							CommandType: "update_zone_state",
+							Zone:        zoneName,
+							State:       0,
+						}
+						c.TaskQueue <- newCmdMessage
 					}
-					scheduleItem.Mutex.RUnlock()
 				}
+				zoneInfo.Mutex.RUnlock()
 			}
 		}
 
@@ -141,6 +199,7 @@ func (c *ControllerService) Run() {
 			c.Logger.Debug("Done ctx signal detected during contoller service wait loop - exiting")
 			taskProcCancel()
 			taskProcWg.Wait()
+			c.MqttCleanup()
 			c.Wg.Done()
 			return
 		case <-timer.C:
@@ -155,48 +214,79 @@ func (c *ControllerService) TaskProcessor(wg *sync.WaitGroup, ctx context.Contex
 			c.Logger.Info("Done signal detected in TaskProcessor - exiting")
 			wg.Done()
 			return
-		case t := <-c.TaskQueue:
-			// Send POST request to API to start the event
-			err := c.ApiHandler.SendSprinklerEventRequest(t)
+		case m := <-c.TaskQueue:
+			jsonEncoded, err := json.Marshal(m)
 			if err != nil {
-				c.Logger.Error("API request error", "event", t)
+				c.Logger.Error("Error marshalling command message", "error", err, "msg", m)
 				continue
 			}
-			c.Logger.Info("Setting zone active flag to true", "schduleItem", t)
-			t.Mutex.Lock()
-			t.Active = true
-			t.Mutex.Unlock()
+			c.Logger.Info("Sending command message", "msg", m)
+			token := c.MqttClient.Client.Publish("sprinkler_system_controller/picow/command", 1, false, jsonEncoded)
+
+			// Wait for the publish to complete
+			if token.Wait() && token.Error() != nil {
+				c.Logger.Error("Failed to publish message", "error", token.Error(), "msg", m)
+			} else {
+				c.Logger.Info("Message published successfully", "msg", m)
+			}
 		}
 	}
 }
 
-// for zoneName, zoneInfo := range c.Config.ZoneList {
-// 	c.Logger.Debug("Checking zone schedule", "zone", zoneName)
-// 	for idx := range zoneInfo.Schedule {
-// 		currentTime := time.Now()
+func (c *ControllerService) OnMsgHndlrFactory() mqtt.MessageHandler {
+	return func(client mqtt.Client, msg mqtt.Message) {
+		c.Logger.Info("Received MQT message: ", "payload", msg.Payload(), "topic", msg.Topic())
 
-// 		scheduleItem := &zoneInfo.Schedule[idx]
+		switch msg.Topic() {
+		case "sprinkler_system_controller/picow/status":
+			var statusMsg PicowStatusResponse
+			err := json.Unmarshal(msg.Payload(), &statusMsg)
+			if err != nil {
+				c.Logger.Error("Error unmarshalling picow status message", "msg", msg.Payload(), "error", err)
+			}
+			// This is messy - need a better way to do this
+			c.Config.ZoneList["zone1"].Mutex.Lock()
+			c.Config.ZoneList["zone1"].Active = statusMsg.Zone1Active
+			c.Config.ZoneList["zone1"].Mutex.Unlock()
 
-// 		c.Logger.Debug("Comparing current and start times", "zone", zoneName, "current", currentTime, "startTime", scheduleItem.StartTime)
+			c.Config.ZoneList["zone2"].Mutex.Lock()
+			c.Config.ZoneList["zone2"].Active = statusMsg.Zone2Active
+			c.Config.ZoneList["zone2"].Mutex.Unlock()
 
-// 		startTime, err := time.Parse(time.TimeOnly, scheduleItem.StartTime)
-// 		if err != nil {
-// 			c.Logger.Error("Error parsing start time", "startTime", scheduleItem.StartTime, "error", err)
-// 		}
+			c.Config.ZoneList["zone3"].Mutex.Lock()
+			c.Config.ZoneList["zone3"].Active = statusMsg.Zone3Active
+			c.Config.ZoneList["zone3"].Mutex.Unlock()
 
-// 		duration := time.Duration(scheduleItem.DurationMinutes)
-// 		endTime := startTime.Add(duration * time.Minute)
+			c.Config.ZoneList["zone4"].Mutex.Lock()
+			c.Config.ZoneList["zone4"].Active = statusMsg.Zone4Active
+			c.Config.ZoneList["zone4"].Mutex.Unlock()
+		}
+	}
+}
 
-// 		scheduleItem.Mutex.RLock()
-// 		if currentTime.After(startTime) && !scheduleItem.Active {
-// 			c.Logger.Debug("Zone is not active and current time exceeds start time for zone schedule item", "zone", zoneName, "currentTime", time.Now(), "startTime", startTime)
-// 			c.Logger.Info("Starting sprinkler event", "zoneName", zoneName, "currentTime", currentTime, "startTime", scheduleItem.StartTime, "endTime", endTime, "durationMinutes", scheduleItem.DurationMinutes)
-// 			c.TaskQueue <- scheduleItem
-// 		}
+func (c *ControllerService) OnConnectHndlrFactory() mqtt.OnConnectHandler {
+	return func(client mqtt.Client) {
+		c.Logger.Info("MQTT connected")
+	}
+}
 
-// 		if currentTime.After(endTime) && scheduleItem.Active {
-// 			c.Logger.Debug("Zone is active and current time exceeds end time for zone schedule item", "zone", zoneName, "currentTime", time.Now(), "startTime", startTime)
-// 			c.Logger.Info("Stopping sprinkler event", "zoneName", zoneName, "currentTime", currentTime, "startTime", scheduleItem.StartTime, "endTime", endTime, "durationMinutes", scheduleItem.DurationMinutes)
-// 			c.TaskQueue <- scheduleItem
-// 		}
-// 		scheduleItem.Mutex.RUnlock()
+func (c *ControllerService) OnConnectLostHndlrFactory() mqtt.ConnectionLostHandler {
+	return func(client mqtt.Client, err error) {
+		c.Logger.Error("MQTT connection lost", "error", err)
+	}
+}
+
+func (c *ControllerService) MqttSubscribe(topic string) {
+	token := c.MqttClient.Client.Subscribe(topic, 1, nil)
+	token.Wait()
+	c.Logger.Info("Subscribing to MQTT topic", "topic", topic)
+}
+
+func (c *ControllerService) MqttCleanup() {
+	c.Logger.Info("MQTT cleanup called")
+
+	c.MqttClient.Client.Unsubscribe("sprinkler_system_controller/picow/status")
+
+	c.MqttClient.Client.Disconnect(100)
+
+}
